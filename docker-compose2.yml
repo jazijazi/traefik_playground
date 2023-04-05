@@ -1,0 +1,75 @@
+version: '3'
+
+services:
+  wbserver:
+    image: traefik:latest
+    volumes:
+      - $PWD/traefik/traefik.yml:/etc/traefik/traefik.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    ports:
+      - 8080:8080 # (( Expose Dashboard )) Don't do this in production!
+      - 80:80
+
+  server1:
+    build: ./server/
+    container_name: server1
+    ports:
+      - 7777:7777
+    environment:
+      - PORT_NODE=7777
+    labels:
+      - traefik.http.routers.server1.entrypoints=web
+      
+      - traefik.http.routers.server1.rule=Host(`localhost`) && Path(`/`)
+      - traefik.http.routers.server1.service=allnodejsbackend
+      - traefik.http.services.allnodejsbackend.loadbalancer.server.port=7777
+      
+      
+
+      - traefik.http.routers.app1router.rule=Host(`localhost`) && Path(`/app1`)
+      - traefik.http.routers.app1router.service=app1service
+      - traefik.http.services.app1service.loadbalancer.server.port=7777
+
+  server2:
+    build: ./server/
+    container_name: server2
+    ports:
+      - 8888:8888
+    environment:
+      - PORT_NODE=8888
+    labels:
+      - traefik.http.routers.server2.entrypoints=web
+      
+      - traefik.http.routers.server2.rule=Host(`localhost`) && Path(`/`)
+      - traefik.http.routers.server2.service=allnodejsbackend
+      - traefik.http.services.allnodejsbackend.loadbalancer.server.port=8888
+      - traefik.weight=1
+      
+      - traefik.http.routers.app2router.rule=Host(`localhost`) && Path(`/app2`)
+      - traefik.http.routers.app2router.service=app2service
+      - traefik.http.services.app2service.loadbalancer.server.port=8888
+
+  server3:
+    build: ./server/
+    container_name: server3
+    ports:
+      - 5555:5555
+    environment:
+      - PORT_NODE=5555
+    labels:
+      - traefik.http.routers.server3.entrypoints=web
+      
+      - traefik.http.routers.server3.rule=Host(`localhost`) && Path(`/`)
+      - traefik.http.routers.server3.service=allnodejsbackend
+      - traefik.http.services.allnodejsbackend.loadbalancer.server.port=5555
+      - traefik.weight=1
+
+      - traefik.http.routers.app3router.rule=Host(`localhost`) && Path(`/admin`)
+      - traefik.http.routers.app3router.service=app3service
+      - traefik.http.services.app3service.loadbalancer.server.port=5555
+
+
+
+# volumes:
+#     db_data:
